@@ -1,0 +1,20 @@
+{
+  "name": "leaflet-map",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "web-dev-server --node-resolve --app-index demo/index.html --open"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "html-element-property-mixins": "^0.11.0",
+    "leaflet": "^1.7.1",
+    "lit-html": "^1.4.1"
+  },
+  "devDependencies": {
+    "@web/dev-server": "^0.1.21"
+  }
+}
