@@ -92,6 +92,9 @@ export class LeafletMap extends BaseElement {
 
     this.legenda = control.layers(baseMaps,[],{position:"bottomright"}).addTo(this.map);
     this.dispatchEvent(new CustomEvent('map-loaded'));
+    window.setTimeout(() => {
+      this.map._onResize();
+    }, 1000);
   }
 
 }
