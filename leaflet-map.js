@@ -1,5 +1,5 @@
 import { BaseElement, html } from './base-element';
-import {map as createMap , tileLayer, polygon, geoJSON, featureGroup, marker, control} from 'leaflet/dist/leaflet-src.esm.js';
+import {map as createMap , tileLayer, polygon, geoJSON, featureGroup, marker, control, Icon, circleMarker} from 'leaflet/dist/leaflet-src.esm.js';
 import {leafletCss} from './leaflet-style.css.js';
 import './leaflet-popup';
 
@@ -13,7 +13,15 @@ export class LeafletMap extends BaseElement {
       },
       baseMap: {
         observe: true
-      }
+      },
+      layers: {
+        observe: true,
+        defaultValue: {}
+      },
+      markers: {
+        observe: true,
+        defaultValue: {}
+      },
     };
   }
 
@@ -38,20 +46,146 @@ export class LeafletMap extends BaseElement {
   }
 
 
-  addGeoJsonToMap(geoJsonData) {
-    this.polygons = geoJSON(geoJsonData, {style: {
-      fillColor: 'blue',
-      weight: 0.5,
-      opacity: 0.4,
-      color: '#323232',
-      fillOpacity: 0.4
-    }});
+  addGeoJsonToMap(data, options, addToMap = true) {
+    let geoJsonData = [];
+    if(options.type === 'locations') {
+      geoJsonData = geoJSON(data, {style: {
+        fillColor: options.fillColor || '#3DAE2B',
+        weight: 2,
+        opacity: 1,
+        color: options.color || '#3DAE2B',
+        fillOpacity: 0.5
+      },
+      pointToLayer: function(point, latlng) {
+        return marker(latlng, { icon: new Icon({
+          iconUrl: options.iconUrl || '/images/flag.svg', 
+          iconSize: options.iconSize || [20, 21],
+          iconAnchor: options.iconAnchor || [5, 21]
+        }) })
+      }}).addTo(this.map)
+    } else {
+      geoJsonData = geoJSON(data, {style: {
+        fillColor: options.fillColor || '#3DAE2B',
+        weight: 2,
+        opacity: 1,
+        color: options.color || '#3DAE2B',
+        fillOpacity: 0.5
+      }})
+    }
 
-    this.polygons.eachLayer((layer) => { layer.bindPopup( this._createPopupContent(layer.feature.properties) ); });
-    this.map.fitBounds(this.polygons.getBounds());
     this.markerlaag = featureGroup().addTo(this.map);
-    
-    this.polygons.eachLayer((layer) => { marker([layer.feature.properties['lat'],layer.feature.properties['lon'] ]).bindPopup(this._createPopupContent(layer.feature.properties)).addTo(this.markerlaag) });
+
+    if(!this.layers[options.layerId]) this.layers[options.layerId] = {items: []};
+
+
+    geoJsonData.eachLayer(
+      (layer) => { 
+        if(options.type === 'locations') {
+          layer.on('click',(evt) => this._handleMarkerClick(evt, layer, !addToMap, options));
+
+        } else {
+          layer.on('click',(evt) => this._handlePolygonClick(evt, !addToMap)) ;
+        }
+        if(addToMap && !options.defaultHidden) layer.addTo(this.map);
+
+        this.layers[options.layerId].addToMap = addToMap;
+        this.layers[options.layerId].items.push(layer)
+
+        if(options.type !== 'locations') {
+          if(!this.markers[options.layerId]) this.markers[options.layerId] = {items: []};
+
+          const layerMarker = marker(
+            [parseFloat(layer.feature.properties['latitude']),parseFloat(layer.feature.properties['longitude']) ],
+            {title: layer.feature.properties['title'], icon: new Icon({
+              iconUrl: options.iconUrl || '/images/flag.svg', 
+              iconSize: options.iconSize || [20, 21],
+              iconAnchor: options.iconAnchor || [5, 21]
+            })}
+            );
+            
+          layerMarker.on('click',(evt) => this._handleMarkerClick(evt, layerMarker, !addToMap, options, layer));
+          layerMarker.properties = layer.feature.properties;
+        
+
+          if(!options.defaultHidden) {
+            layerMarker.addTo(this.map);
+          }
+          this.markers[options.layerId].items.push(layerMarker);
+
+        }
+
+          layer.properties = layer.feature.properties;
+      });
+  }
+
+  hideLayerById(id) {
+    if(this.clickmark) this.map.removeLayer(this.clickmark);
+    this.layers[id].items.forEach(layer => {
+      this.map.removeLayer(layer);
+    })
+    if(this.markers[id] && this.markers[id].items) {
+      this.markers[id].items.forEach(layer => {
+        this.map.removeLayer(layer);
+      })
+    }
+
+  }
+
+  addLayerById(id) {
+    if(this.markers[id] && this.markers[id].items) {
+      this.markers[id].items.forEach(layer => {
+        this.map.addLayer(layer);
+      })
+      if(this.layers[id].addToMap) {
+        this.layers[id].items.forEach(layer => {
+          this.map.addLayer(layer);
+        })
+      }
+    } else {
+      this.layers[id].items.forEach(layer => {
+        this.map.addLayer(layer);
+      })
+    }
+  }
+
+  _handlePolygonClick(evt) {
+    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: evt.target.properties}}));
+    this._deselectPolygon();
+    this.selectedPolygon = evt.target;
+    if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
+  }
+
+  _handleMarkerClick(evt, marker, removeFromMap = false, options, layer) {
+    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: evt.target.properties}}));
+    this._deselectPolygon(removeFromMap);
+    if(this.clickmark) this.map.removeLayer(this.clickmark);
+    let markerCoordinates = [
+      marker._latlng.lng,
+      marker._latlng.lat
+    ]
+		 this.clickmark = circleMarker([parseFloat(markerCoordinates[1]), parseFloat(markerCoordinates[0])],{
+			radius: 10,
+			color: "rgba(255, 219, 162, 1)",
+			fillColor:  "rgba(255, 219, 162, 1)",
+			fillOpacity: 1}
+		 ).addTo(this.map);
+
+    if(!layer) return;
+    this.selectedPolygon = layer;
+    this.selectedPolygon.addToMap = removeFromMap;
+    if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
+    this.selectedPolygon.addTo(this.map);
+  }
+
+  _deselectPolygon(removeFromMap = false) {
+    if(this.clickmark) this.map.removeLayer(this.clickmark);
+    if(!this.selectedPolygon || (this.selectedPolygon.properties.layerType === 'locations')) return this.selectedPolygon = null;
+    if(removeFromMap || this.selectedPolygon.addToMap) { 
+      this.map.removeLayer(this.selectedPolygon);
+    } else {
+      this.selectedPolygon.setStyle({fillColor: this.selectedPolygon.defaultOptions.style.fillColor});
+    }
+    this.selectedPolygon = null;
   }
 
   addLayer(layer) {
@@ -65,36 +199,39 @@ export class LeafletMap extends BaseElement {
     if(layer) this.map.removeLayer(layer);
   }
 
-  _handlePopupClick(evt) {
-    if(evt.target.nodeName && evt.target.nodeName.toLowerCase().includes('button')) {
-      this.dispatchEvent(new CustomEvent('marker-button-click', {detail: {el: evt.target}}));
-    }
-  }
-  _createPopupContent(p){
-    const popupEl = document.createElement('leaflet-popup');
-    popupEl.addEventListener('click', (evt) => {this._handlePopupClick(evt)});
-    popupEl.innerHTML = this.popupContentCreator(p);
-    return popupEl;
+  removeAllLayers() {
+    this.map.eachLayer((layer) => {
+      if (!!layer.toGeoJSON) {
 
+        this.map.removeLayer(layer);
+      }
+    });
+  
+  }
+
+  switchToBasemap(url, options = {}) {
+    if(this.basemap) this.map.removeLayer(this.basemap)
+    this.basemap = new tileLayer(url, options);
+    this.map.addLayer(this.basemap)
   }
 
   connectedCallback() {
     super.connectedCallback();
     const mapContainerEl = this.shadowRoot.getElementById('map-container');
-    this.map = createMap(mapContainerEl).setView(this.mapSettings.center, this.mapSettings.zoom);
-
-
-    var straatkaart = new tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {minZoom: 4, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
-    var grijzekaart = new tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {minZoom: 4, maxZoom: 20,  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy;<a href="https://carto.com/attribution">CARTO</a>'});
-    this.map.addLayer(straatkaart)
-    this.map.addLayer(grijzekaart)
-    var baseMaps = {"Straatkaart":straatkaart, "Grijze kaart":grijzekaart};
-
-    this.legenda = control.layers(baseMaps,[],{position:"bottomright"}).addTo(this.map);
-    this.dispatchEvent(new CustomEvent('map-loaded'));
-    window.setTimeout(() => {
+    this.map = createMap(mapContainerEl)
+    
+    this.map.on('layeradd', (evt) => {
       this.map._onResize();
-    }, 1000);
+    })
+    this.map.setView(this.mapSettings.center, this.mapSettings.zoom);
+
+
+    this.switchToBasemap(
+      'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+      {minZoom: 4, maxZoom: 20,  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy;<a href="https://carto.com/attribution">CARTO</a>'}
+    )
+
+    this.dispatchEvent(new CustomEvent('map-loaded'));
   }
 
 }
