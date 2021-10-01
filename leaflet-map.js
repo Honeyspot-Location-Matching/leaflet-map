@@ -94,6 +94,7 @@ export class LeafletMap extends BaseElement {
         if(options.type !== 'locations') {
           if(!this.markers[options.layerId]) this.markers[options.layerId] = {items: []};
 
+          // Note: This is latLng, geoJson is lonLat. Rather confusing.
           const layerMarker = marker(
             [parseFloat(layer.feature.properties['latitude']),parseFloat(layer.feature.properties['longitude']) ],
             {title: layer.feature.properties['title'], icon: new Icon({
