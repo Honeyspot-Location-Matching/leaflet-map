@@ -75,7 +75,8 @@ export class LeafletMap extends BaseElement {
 
     this.markerlaag = featureGroup().addTo(this.map);
 
-    if(!this.layers[options.layerId]) this.layers[options.layerId] = {items: []};
+    this.layers[options.layerId] = {items: []};
+    this.markers[options.layerId] = {items: []};
 
 
     geoJsonData.eachLayer(
@@ -92,13 +93,12 @@ export class LeafletMap extends BaseElement {
         this.layers[options.layerId].items.push(layer)
 
         if(options.type !== 'locations') {
-          if(!this.markers[options.layerId]) this.markers[options.layerId] = {items: []};
 
           // Note: This is latLng, geoJson is lonLat. Rather confusing.
           const layerMarker = marker(
             [parseFloat(layer.feature.properties['latitude']),parseFloat(layer.feature.properties['longitude']) ],
             {title: layer.feature.properties['title'], icon: new Icon({
-              iconUrl: options.iconUrl || '/images/flag.svg', 
+              iconUrl:  options.iconUrl || '/images/flag.svg', 
               iconSize: options.iconSize || [20, 21],
               iconAnchor: options.iconAnchor || [5, 21]
             })}
@@ -107,7 +107,6 @@ export class LeafletMap extends BaseElement {
           layerMarker.on('click',(evt) => this._handleMarkerClick(evt, layerMarker, !addToMap, options, layer));
           layerMarker.properties = layer.feature.properties;
         
-
           if(!options.defaultHidden) {
             layerMarker.addTo(this.map);
           }
@@ -117,6 +116,8 @@ export class LeafletMap extends BaseElement {
 
           layer.properties = layer.feature.properties;
       });
+
+      return geoJsonData;
   }
 
   hideLayerById(id) {
@@ -160,22 +161,25 @@ export class LeafletMap extends BaseElement {
     this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: evt.target.properties}}));
     this._deselectPolygon(removeFromMap);
     if(this.clickmark) this.map.removeLayer(this.clickmark);
-    let markerCoordinates = [
-      marker._latlng.lng,
-      marker._latlng.lat
-    ]
-		 this.clickmark = circleMarker([parseFloat(markerCoordinates[1]), parseFloat(markerCoordinates[0])],{
-			radius: 10,
-			color: "rgba(255, 219, 162, 1)",
-			fillColor:  "rgba(255, 219, 162, 1)",
-			fillOpacity: 1}
-		 ).addTo(this.map);
+    
 
-    if(!layer) return;
-    this.selectedPolygon = layer;
-    this.selectedPolygon.addToMap = removeFromMap;
-    if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
-    this.selectedPolygon.addTo(this.map);
+     if(!layer) {
+      let markerCoordinates = [
+        marker._latlng.lng,
+        marker._latlng.lat
+      ]
+       this.clickmark = circleMarker([parseFloat(markerCoordinates[1]), parseFloat(markerCoordinates[0])],{
+        radius: 10,
+        color: "rgba(255, 219, 162, 1)",
+        fillColor:  "rgba(255, 219, 162, 1)",
+        fillOpacity: 1}
+       ).addTo(this.map);
+     } else {
+       this.selectedPolygon = layer;
+       this.selectedPolygon.addToMap = removeFromMap;
+       if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
+       this.selectedPolygon.addTo(this.map);
+     }
   }
 
   _deselectPolygon(removeFromMap = false) {
