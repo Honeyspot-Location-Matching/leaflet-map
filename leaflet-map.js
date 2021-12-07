@@ -120,6 +120,11 @@ export class LeafletMap extends BaseElement {
       return geoJsonData;
   }
 
+
+  fitMapBoundsToLayer(layerName, maxZoom = 14) {
+    this.map.fitBounds(this.layers[layerName].items.map(item => item._latlng), {maxZoom: maxZoom})
+  }
+
   hideLayerById(id) {
     if(this.clickmark) this.map.removeLayer(this.clickmark);
     this.layers[id].items.forEach(layer => {
