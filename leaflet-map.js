@@ -169,6 +169,7 @@ export class LeafletMap extends BaseElement {
     
 
      if(!layer) {
+      if(!marker || !marker._latlng) return;
       let markerCoordinates = [
         marker._latlng.lng,
         marker._latlng.lat
