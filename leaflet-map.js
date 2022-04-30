@@ -124,7 +124,7 @@ export class LeafletMap extends BaseElement {
 
 
   fitMapBoundsToLayer(layerName, maxZoom = 14) {
-    this.map.fitBounds(this.layers[layerName].items.map(item => item._latlng), {maxZoom: maxZoom})
+    this.map.fitBounds(this.layers[layerName].items.map(item => item._latlng || item._latlngs), {maxZoom: maxZoom})
   }
 
   hideLayerById(id) {
