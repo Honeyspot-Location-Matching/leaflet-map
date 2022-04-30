@@ -73,13 +73,12 @@ export class LeafletMap extends BaseElement {
       }})
     }
 
-    this.markerlaag = featureGroup().addTo(this.map);
-
     this.layers[options.layerId] = {items: []};
     this.markers[options.layerId] = {items: []};
 
     geoJsonData.eachLayer(
       (layer) => { 
+
         if(layer.feature.properties.color) {
           layer.setStyle({fillColor: layer.feature.properties.color});
           layer.setStyle({color: layer.feature.properties.color});
@@ -90,8 +89,12 @@ export class LeafletMap extends BaseElement {
         } else {
           layer.on('click',(evt) => this._handlePolygonClick(evt, !addToMap)) ;
         }
-        if(addToMap && !options.defaultHidden) layer.addTo(this.map);
-
+        let mapLayer = {};
+        if(addToMap && !options.defaultHidden) mapLayer = layer.addTo(this.map);
+        if(layer.feature.properties.unselectable) {
+          mapLayer.interactive = false;
+          mapLayer.bringToBack();
+        }
         this.layers[options.layerId].addToMap = addToMap;
         this.layers[options.layerId].items.push(layer)
         if(options.type !== 'locations' && (layer.feature.properties['latitude'] && layer.feature.properties['longitude'])) {
@@ -158,7 +161,9 @@ export class LeafletMap extends BaseElement {
   }
 
   _handlePolygonClick(evt) {
-    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: {...evt.target.properties, ...evt.target.feature.properties}}}));
+    const properties = {...evt.target.properties, ...evt.target.feature.properties};
+    if(properties.unselectable) return;
+    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: properties}}));
     this._deselectPolygon();
     this.selectedPolygon = evt.target;
     if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
