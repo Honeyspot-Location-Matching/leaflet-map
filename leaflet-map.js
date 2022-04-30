@@ -78,7 +78,6 @@ export class LeafletMap extends BaseElement {
     this.layers[options.layerId] = {items: []};
     this.markers[options.layerId] = {items: []};
 
-
     geoJsonData.eachLayer(
       (layer) => { 
         if(layer.feature.properties.color) {
@@ -86,7 +85,7 @@ export class LeafletMap extends BaseElement {
           layer.setStyle({color: layer.feature.properties.color});
         }
         if(options.type === 'locations') {
-          layer.on('click',(evt) => this._handleMarkerClick(evt, layer, !addToMap, options));
+          layer.on('click',(evt) => this._handleMarkerClick(evt, layer, !addToMap, options, layer));
 
         } else {
           layer.on('click',(evt) => this._handlePolygonClick(evt, !addToMap)) ;
@@ -194,7 +193,7 @@ return;
 
   _deselectPolygon(removeFromMap = false) {
     if(this.clickmark) this.map.removeLayer(this.clickmark);
-    if(!this.selectedPolygon || (this.selectedPolygon.properties.layerType === 'locations')) return this.selectedPolygon = null;
+    if(!this.selectedPolygon || (this.selectedPolygon.properties && this.selectedPolygon.properties.layerType === 'locations')) return this.selectedPolygon = null;
     if(removeFromMap || this.selectedPolygon.addToMap) { 
       this.map.removeLayer(this.selectedPolygon);
     } else {
