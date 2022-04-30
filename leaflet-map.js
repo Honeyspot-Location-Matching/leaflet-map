@@ -160,7 +160,7 @@ return;
   }
 
   _handlePolygonClick(evt) {
-    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: evt.target.properties}}));
+    this.dispatchEvent(new CustomEvent('marker-clicked', {detail: {properties: {...evt.target.properties, ...evt.target.feature.properties}}}));
     this._deselectPolygon();
     this.selectedPolygon = evt.target;
     if(this.selectedPolygon.setStyle) this.selectedPolygon.setStyle({fillColor: '#0000FF'});
