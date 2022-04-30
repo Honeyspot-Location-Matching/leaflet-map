@@ -81,6 +81,10 @@ export class LeafletMap extends BaseElement {
 
     geoJsonData.eachLayer(
       (layer) => { 
+        if(layer.feature.properties.color) {
+          layer.setStyle({fillColor: layer.feature.properties.color});
+          layer.setStyle({color: layer.feature.properties.color});
+        }
         if(options.type === 'locations') {
           layer.on('click',(evt) => this._handleMarkerClick(evt, layer, !addToMap, options));
 
