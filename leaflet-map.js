@@ -204,6 +204,28 @@ export class LeafletMap extends BaseElement {
     }
   }
 
+  setPolygonColorByKeyPerc(key, colorArr) {
+    Object.values(this.layers).forEach(layer => {
+      layer.items.forEach(item => {
+        let index = 0;
+        if(item.properties[key] > 5 && item.properties[key] <= 10) {index = 1} 
+        if(item.properties[key] > 10 && item.properties[key] <= 15) {index = 2} 
+        if(item.properties[key] > 15 && item.properties[key] <= 20) {index = 3} 
+        if(item.properties[key] > 20) {index = 4} 
+        item.setStyle({fillColor: colorArr[index]})
+      })
+    })
+  }
+
+  resetPolygonColors() {
+    Object.values(this.layers).forEach(layer => {
+      layer.items.forEach(item => {
+        item.setStyle({ fillColor: item.properties.color ? item.properties.color : item.defaultOptions.style.fillColor });
+      })
+    })
+
+  }
+
   _deselectPolygon(removeFromMap = false) {
     if (this.clickmark) this.map.removeLayer(this.clickmark);
     if (!this.selectedPolygon || (this.selectedPolygon.properties && this.selectedPolygon.properties.layerType === 'locations')) return this.selectedPolygon = null;
