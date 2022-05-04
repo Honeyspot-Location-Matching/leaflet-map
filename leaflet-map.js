@@ -216,6 +216,7 @@ export class LeafletMap extends BaseElement {
         if(value > 25 && value <= 50) {index = 4} 
         if(value > 50) {index = 5} 
         item.setStyle({fillColor: colorArr[index]})
+        item.feature.properties['_bufferColor'] = colorArr[index];
       })
     })
   }
@@ -223,7 +224,9 @@ export class LeafletMap extends BaseElement {
   resetPolygonColors() {
     Object.values(this.layers).forEach(layer => {
       layer.items.forEach(item => {
-        item.setStyle({ fillColor: item.properties.color ? item.properties.color : item.defaultOptions.style.fillColor });
+        const fillColor = item.properties.color ? item.properties.color : item.defaultOptions.style.fillColor;
+        item.setStyle({ fillColor: fillColor});
+        item.feature.properties['_bufferColor'] = fillColor;
       })
     })
 
@@ -235,7 +238,8 @@ export class LeafletMap extends BaseElement {
     if (removeFromMap || this.selectedPolygon.addToMap) {
       this.map.removeLayer(this.selectedPolygon);
     } else {
-      this.selectedPolygon.setStyle({ fillColor: this.selectedPolygon.properties.color ? this.selectedPolygon.properties.color : this.selectedPolygon.defaultOptions.style.fillColor });
+      const bufferColor = this.selectedPolygon && this.selectedPolygon.feature && this.selectedPolygon.feature.properties && this.selectedPolygon.feature.properties['_bufferColor'];
+      this.selectedPolygon.setStyle({ fillColor: bufferColor ? bufferColor : this.selectedPolygon.properties.color ? this.selectedPolygon.properties.color : this.selectedPolygon.defaultOptions.style.fillColor });
     }
     this.selectedPolygon = null;
   }
