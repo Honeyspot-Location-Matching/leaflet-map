@@ -52,7 +52,7 @@ export class LeafletMap extends BaseElement {
       geoJsonData = geoJSON(data, {
         style: {
           fillColor: options.fillColor || '#3DAE2B',
-          weight: 2,
+          weight: 1,
           opacity: 1,
           color: options.color || '#3DAE2B',
           fillOpacity: 0.5
@@ -71,7 +71,7 @@ export class LeafletMap extends BaseElement {
       geoJsonData = geoJSON(data, {
         style: {
           fillColor: options.fillColor || '#3DAE2B',
-          weight: 2,
+          weight: 1,
           opacity: 1,
           color: options.color || '#3DAE2B',
           fillOpacity: 0.5
@@ -86,8 +86,8 @@ export class LeafletMap extends BaseElement {
       (layer) => {
 
         if (layer.feature.properties.color) {
-          layer.setStyle({ fillColor: layer.feature.properties.color });
-          layer.setStyle({ color: layer.feature.properties.color });
+          layer.setStyle({ fillColor: layer.feature.properties.color, color: '#bababa' });
+          layer.feature.properties['_bufferColor'] = layer.feature.properties.color;
         }
         if (options.type === 'locations') {
           layer.on('click', (evt) => this._handleMarkerClick(evt, layer, !addToMap, options, layer));
