@@ -208,10 +208,13 @@ export class LeafletMap extends BaseElement {
     Object.values(this.layers).forEach(layer => {
       layer.items.forEach(item => {
         let index = 0;
-        if(item.properties[key] > 5 && item.properties[key] <= 10) {index = 1} 
-        if(item.properties[key] > 10 && item.properties[key] <= 15) {index = 2} 
-        if(item.properties[key] > 15 && item.properties[key] <= 20) {index = 3} 
-        if(item.properties[key] > 20) {index = 4} 
+        const properties = { ...item.properties, ...item.feature.properties };
+        const value = properties[key];
+        if(value > 5 &&  value <= 10) {index = 1} 
+        if(value > 10 && value <= 20) {index = 2} 
+        if(value > 20 && value <= 35) {index = 3} 
+        if(value > 25 && value <= 50) {index = 4} 
+        if(value > 50) {index = 5} 
         item.setStyle({fillColor: colorArr[index]})
       })
     })
