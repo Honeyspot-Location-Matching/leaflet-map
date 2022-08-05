@@ -48,11 +48,11 @@ export class LeafletMap extends BaseElement {
 
   addGeoJsonToMap(data, options, addToMap = true) {
     let geoJsonData = [];
-    if (options.type === 'locations') {
+    if (options.isLocation || options.type === 'locations') {
       geoJsonData = geoJSON(data, {
         style: {
           fillColor: options.fillColor || '#3DAE2B',
-          weight: 1,
+          weight: options.weight || 1,
           opacity: 1,
           color: options.color || '#3DAE2B',
           fillOpacity: 0.5
@@ -71,7 +71,7 @@ export class LeafletMap extends BaseElement {
       geoJsonData = geoJSON(data, {
         style: {
           fillColor: options.fillColor || '#3DAE2B',
-          weight: 1,
+          weight: options.weight || 1,
           opacity: 1,
           color: options.color || '#3DAE2B',
           fillOpacity: 0.5
@@ -84,14 +84,12 @@ export class LeafletMap extends BaseElement {
 
     geoJsonData.eachLayer(
       (layer) => {
-
         if (layer.feature.properties.color) {
           layer.setStyle({ fillColor: layer.feature.properties.color, color: '#bababa' });
           layer.feature.properties['_bufferColor'] = layer.feature.properties.color;
         }
-        if (options.type === 'locations') {
+        if (options.isLocation || options.type === 'locations') {
           layer.on('click', (evt) => this._handleMarkerClick(evt, layer, !addToMap, options, layer));
-
         } else {
           layer.on('click', (evt) => this._handlePolygonClick(evt, !addToMap));
         }
@@ -103,7 +101,7 @@ export class LeafletMap extends BaseElement {
         }
         this.layers[options.layerId].addToMap = addToMap;
         this.layers[options.layerId].items.push(layer)
-        if (options.type !== 'locations' && (layer.feature.properties['latitude'] && layer.feature.properties['longitude'])) {
+        if ((!options.isLocation && options.type !== 'locations')&& (layer.feature.properties['latitude'] && layer.feature.properties['longitude'])) {
 
           // Note: This is latLng, geoJson is lonLat. Rather confusing.
           const layerMarker = marker(
@@ -182,8 +180,7 @@ export class LeafletMap extends BaseElement {
     this._deselectPolygon(removeFromMap);
     if (this.clickmark) this.map.removeLayer(this.clickmark);
 
-
-    if (!layer) {
+    if (!layer || options.noPolygon) {
       if (!marker || !marker._latlng) return;
       let markerCoordinates = [
         marker._latlng.lng,
