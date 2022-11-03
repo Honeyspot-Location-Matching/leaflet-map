@@ -132,7 +132,7 @@ export class LeafletMap extends BaseElement {
   }
 
 
-  fitMapBoundsToLayer(layerName, maxZoom = 14) {
+  fitMapBoundsToLayer(layerName, maxZoom = 15) {
     this.map.fitBounds(this.layers[layerName].items.map(item => item._latlng || item._latlngs), { maxZoom: maxZoom })
   }
 
